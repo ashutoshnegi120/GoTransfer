@@ -22,7 +22,7 @@ func GenerateJWT(userID string, secretKey string) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 	return token.SignedString([]byte(secretKey))
 }
 

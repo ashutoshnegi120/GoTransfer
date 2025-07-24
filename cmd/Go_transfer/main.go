@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ashutos120/go_transfer/internal/config"
+	"github.com/ashutos120/go_transfer/internal/midlleware"
 	"github.com/ashutos120/go_transfer/internal/utile"
 )
 
@@ -34,7 +35,7 @@ func main() {
 	//router
 	router.HandleFunc("POST /login", Login)
 	router.HandleFunc("POST /signup/{username}/{password}", Signup)
-	router.HandleFunc("POST /upload", Upload)
+	router.HandleFunc("POST /upload", midlleware.JWTMiddleware(cfg.SecretKey , Upload))
 
 	handler := withConfig(cfg, router)
 
