@@ -38,6 +38,7 @@ func main() {
 	//router
 	router.HandleFunc("POST /login", Login)
 	router.HandleFunc("POST /signup/{username}/{password}", Signup)
+	router.HandleFunc("POST /upload", Upload)
 
 	handler := withConfig(cfg, router)
 
