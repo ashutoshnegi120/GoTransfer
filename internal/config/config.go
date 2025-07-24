@@ -17,6 +17,7 @@ type Config struct {
 	Environment      string     `yaml:"environment" env-required:"true"`
 	DatabaseLocation string     `yaml:"db_location" env-required:"true"`
 	HttpClient       HttpClient `yaml:"http_client" env-required:"true"`
+	SecretKey        string     `yaml:"secretKey" env-required:"true"`
 }
 
 func MustConfig() *Config {

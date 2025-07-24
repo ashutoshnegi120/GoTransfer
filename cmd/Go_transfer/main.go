@@ -13,6 +13,21 @@ import (
 	"github.com/ashutos120/go_transfer/internal/config"
 )
 
+type contextKey string
+
+const configKey = contextKey("config")
+
+func withConfig(cfg *config.Config, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), configKey, cfg)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func GetConfig(r *http.Request) *config.Config {
+	return r.Context().Value(configKey).(*config.Config)
+}
+
 func main() {
 
 	//config
@@ -21,11 +36,15 @@ func main() {
 	//server
 	router := http.NewServeMux()
 	//router
-	router.HandleFunc("GET /{$}", Home)
+	router.HandleFunc("POST /login", Login)
+	router.HandleFunc("POST /signup/{username}/{password}", Signup)
+
+	handler := withConfig(cfg, router)
+
 	serverAddr := fmt.Sprintf("%s:%s", cfg.HttpClient.Host, cfg.HttpClient.Port)
 	server := &http.Server{
 		Addr:    serverAddr,
-		Handler: router,
+		Handler: handler,
 	}
 
 	log.Printf("Server is running at: http://%s", serverAddr)
@@ -48,4 +67,3 @@ func main() {
 
 	log.Println("Server exited gracefully")
 }
-
