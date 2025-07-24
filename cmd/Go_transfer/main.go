@@ -11,21 +11,17 @@ import (
 	"time"
 
 	"github.com/ashutos120/go_transfer/internal/config"
+	"github.com/ashutos120/go_transfer/internal/utile"
 )
 
-type contextKey string
 
-const configKey = contextKey("config")
+const configKey = utile.ConfigKey
 
 func withConfig(cfg *config.Config, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), configKey, cfg)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func GetConfig(r *http.Request) *config.Config {
-	return r.Context().Value(configKey).(*config.Config)
 }
 
 func main() {

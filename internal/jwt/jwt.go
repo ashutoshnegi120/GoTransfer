@@ -1,18 +1,18 @@
-package jwt_go
+package jwt
 
 import (
 	"fmt"
 	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 )
-
 
 type MyCustomClaims struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID string,secretKey string) (string, error) {
+func GenerateJWT(userID string, secretKey string) (string, error) {
 	claims := MyCustomClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
