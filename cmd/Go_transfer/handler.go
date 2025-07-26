@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/ashutos120/go_transfer/internal/jwt"
 	"github.com/ashutos120/go_transfer/internal/utile"
@@ -48,14 +49,14 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func Upload(w http.ResponseWriter, r *http.Request) {
-	// Step 1: Parse the multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB max memory
+	r.Body = http.MaxBytesReader(w, r.Body, 100<<20)
+
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "Failed to parse multipart form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Step 2: Retrieve the file from the form
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Error retrieving file: "+err.Error(), http.StatusBadRequest)
@@ -63,40 +64,48 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Step 3: Safely extract JWT claims from context
 	claims := utile.GetJWTClaim(r)
 	if claims == "" {
-		http.Error(w, "Unauthorized: no JWT claims found", http.StatusUnauthorized)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// Step 4: Log and use the user ID
-	log.Printf("user uuid : %s\nUploaded File: %s\n", claims, handler.Filename)
-
-	localDir := "./uploads/" + claims
-	err = os.MkdirAll(localDir, os.ModePerm)
+	// ✅ Step 1: Copy file into memory (or temp file if large)
+	var buf bytes.Buffer
+	_, err = io.Copy(&buf, file)
 	if err != nil {
-		http.Error(w, "Failed to create upload directory", http.StatusInternalServerError)
+		http.Error(w, "Failed to buffer file", http.StatusInternalServerError)
 		return
 	}
 
-	// Create destination file
-	dstPath := fmt.Sprintf("%s/%s", localDir, handler.Filename)
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		http.Error(w, "Failed to create file", http.StatusInternalServerError)
-		return
-	}
-	defer dst.Close()
+	// ✅ Step 2: Save asynchronously
+	done := make(chan error, 1)
+	go func() {
+		localDir := filepath.Join("./uploads", claims)
+		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
+			done <- err
+			return
+		}
 
-	// Copy uploaded content to destination
-	_, err = io.Copy(dst, file)
-	if err != nil {
+		dstPath := filepath.Join(localDir, handler.Filename)
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			done <- err
+			return
+		}
+		defer dst.Close()
+
+		_, err = io.Copy(dst, &buf)
+		done <- err
+	}()
+
+	// ✅ Step 3: Wait and respond
+	if err := <-done; err != nil {
+		log.Printf("Failed to save file for user %s: %v", claims, err)
 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
 		return
 	}
 
-	// Return success
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("File uploaded successfully\n"))
 }
