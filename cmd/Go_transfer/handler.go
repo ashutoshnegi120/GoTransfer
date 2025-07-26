@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	inmemorystorage "github.com/ashutos120/go_transfer/internal/InMenoryStorge"
 	"github.com/ashutos120/go_transfer/internal/jwt"
 	"github.com/ashutos120/go_transfer/internal/utile"
 	"github.com/google/uuid"
@@ -79,9 +82,10 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ✅ Step 2: Save asynchronously
+	localDir := filepath.Join("./uploads", claims)
 	done := make(chan error, 1)
 	go func() {
-		localDir := filepath.Join("./uploads", claims)
+
 		if err := os.MkdirAll(localDir, os.ModePerm); err != nil {
 			done <- err
 			return
@@ -106,6 +110,72 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fileData := inmemorystorage.Savefile{
+		FileName: handler.Filename,
+		Path:     filepath.Join(localDir, handler.Filename),
+	}
+	f, err := fileData.New()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.Print("file uuid : ", f.FileID)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("File uploaded successfully\n"))
+}
+
+func Download(w http.ResponseWriter, r *http.Request) {
+	userID := utile.GetJWTClaim(r)
+	if userID == "" {
+		http.Error(w, "JWT expired. Please re-login.", http.StatusUnauthorized)
+		return
+	}
+	fileID := r.PathValue("FileID")
+	log.Print("[Download] FileID :", fileID)
+
+	if fileID == "" {
+		http.Error(w, "Missing FileID", http.StatusBadRequest)
+		return
+	}
+
+	id, err := uuid.Parse(fileID)
+	if err != nil {
+		http.Error(w, "Invalid FileID format", http.StatusBadRequest)
+		return
+	}
+
+	fileMeta, err := inmemorystorage.GetPath(id)
+	if err != nil {
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	file, err := os.Open(fileMeta.Path)
+	if err != nil {
+		http.Error(w, "Failed to open file", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Detect mime type
+	mimeType := mime.TypeByExtension(filepath.Ext(fileMeta.FileName))
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", mimeType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileMeta.FileName))
+
+	// Optional: file size (can help with download progress or browsers)
+	if stat, err := file.Stat(); err == nil {
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
+	}
+
+	// Stream the file
+	log.Printf("Download started: user=%s file=%s", userID, fileMeta.FileID.String())
+
+	if _, err := io.Copy(w, file); err != nil {
+		log.Printf("Download failed: user=%s file=%s error=%v", userID, fileMeta.FileID.String(), err)
+	}
 }

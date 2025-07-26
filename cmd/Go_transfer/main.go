@@ -15,7 +15,6 @@ import (
 	"github.com/ashutos120/go_transfer/internal/utile"
 )
 
-
 const configKey = utile.ConfigKey
 
 func withConfig(cfg *config.Config, next http.Handler) http.Handler {
@@ -35,7 +34,8 @@ func main() {
 	//router
 	router.HandleFunc("POST /login", Login)
 	router.HandleFunc("POST /signup/{username}/{password}", Signup)
-	router.HandleFunc("POST /upload", midlleware.JWTMiddleware(cfg.SecretKey , Upload))
+	router.HandleFunc("POST /upload", midlleware.JWTMiddleware(cfg.SecretKey, Upload))
+	router.HandleFunc("GET /download/{FileID}", midlleware.JWTMiddleware(cfg.SecretKey, Download))
 
 	handler := withConfig(cfg, router)
 
