@@ -36,7 +36,7 @@ pipeline {
 Build *#${env.BUILD_NUMBER}* of *${env.JOB_NAME}* completed successfully.
 
 Check it here: ${env.BUILD_URL}""",
-                     to: "atulsgrr10@gmail.com"
+                     to: "ashutoshnegisgrr@gmail.com"
         }
 
         failure {
@@ -46,7 +46,7 @@ Check it here: ${env.BUILD_URL}""",
 Build *#${env.BUILD_NUMBER}* of *${env.JOB_NAME}* failed.
 
 Check console output: ${env.BUILD_URL}console""",
-                     to: "atulsgrr10@gmail.com"
+                     to: "ashutoshnegisgrr@gmail.com"
         }
 
         always {
