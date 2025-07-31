@@ -20,6 +20,13 @@ pipeline {
                 sh 'go test ./cmd/Go_transfer/ -args -config=../../.config/config.yml'
             }
         }
+
+        stage('Clean Uploads') {
+            steps {
+                echo 'Removing uploaded test files...'
+                sh 'rm -rf ./cmd/Go_transfer/uploads'
+            }
+        }
     }
     post {
         success {
