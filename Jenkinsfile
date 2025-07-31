@@ -21,7 +21,7 @@ pipeline {
             }
         }
     }
-    post post {
+    post {
         success {
             emailext subject: "✅ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                      body: """Good news!
