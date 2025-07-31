@@ -1,7 +1,12 @@
+/*
+this file is make for test perpos and 
+we use the sqlite for product ready project not inmemorystorage
+*/
 package inmemorystorage
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +19,22 @@ type Savefile struct {
 	Time     time.Time `json:"time_at_created"`
 }
 
+type FileStatus string
+
+const (
+	StatusUploaded  FileStatus = "uploaded"
+	StatusProcessing FileStatus = "processing"
+	StatusAvailable  FileStatus = "available"
+	StatusFailed     FileStatus = "failed"
+)
+
+type FileTrack struct {
+	FileID uuid.UUID
+	Status FileStatus
+}
+
+var FileStatusStore = make(map[uuid.UUID]FileStatus)
+var MU sync.RWMutex
 var storage = make(map[uuid.UUID]Savefile)
 
 func (s *Savefile) New() (*Savefile, error) {
@@ -22,7 +43,7 @@ func (s *Savefile) New() (*Savefile, error) {
 	}
 
 	temp := Savefile{
-		FileID:   uuid.New(),
+		FileID:   s.FileID,
 		FileName: s.FileName,
 		Path:     s.Path,
 		Time:     time.Now(),
