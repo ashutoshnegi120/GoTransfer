@@ -139,7 +139,6 @@ func TestUploadWithRemoteImage(t *testing.T) {
 	}
 	writer.Close()
 
-
 	req := httptest.NewRequest(http.MethodPost, "/upload", &buf)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -173,4 +172,3 @@ func TestUploadWithRemoteImage(t *testing.T) {
 		fmt.Println("Upload successful!")
 	}
 }
-
