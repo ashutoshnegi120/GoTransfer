@@ -1,0 +1,7 @@
+environment: "Development"
+db_location: "storage/storage.db"
+http_client:
+  port: "8080"
+  host: "0.0.0.0"
+
+secretKey : "34c3b71edc1852f1bea7da44f8532773e0fcb3487e517f115baa17d21b04f454f12d34a90bc757212588aa6939b8c66e65bc2f75a32c60099a24951bf1f885ee"
