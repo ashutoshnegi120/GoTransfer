@@ -24,13 +24,14 @@ func MustConfig() *Config {
 
 	var configPath string
 
-	configPath = os.Getenv("CONFIG_PATH")
+	//configPath = os.Getenv("CONFIG_PATH")
+	//configPath = "../../.config/config.yml"
 
 	if configPath == "" {
 		flags := flag.String("config", "", "plz provide config location to work well if you not define it in .env")
 		flag.Parse()
 		configPath = *flags
-
+		println("config : ", configPath)
 		if configPath == "" {
 			log.Fatal("config is not define, plz provide valid config either using flag or .env")
 		}
