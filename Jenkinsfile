@@ -43,7 +43,7 @@ Check console output: ${env.BUILD_URL}console""",
         }
 
         always {
-            echo 'Build completed.'
+            echo 'Build completed...'
         }
     }
 }
